@@ -5,8 +5,8 @@ A hybrid C++ and web-based diabetes screening project that follows a structured 
 ## Overview
 
 Diabetes Analyzer provides two ways to run the same core logic:
-- A C++ console application (`Diabetes_Analyzer.cpp`)
-- A browser application (`index.html`, `script.js`, `styles.css`)
+- A C++ console application (`src/cpp/Diabetes_Analyzer.cpp`)
+- A browser application (`web/index.html`, `web/script.js`, `web/styles.css`)
 
 The project is intended for awareness and educational use. It is not a medical diagnostic system.
 
@@ -25,11 +25,12 @@ The project is intended for awareness and educational use. It is not a medical d
 
 ## Project Structure
 
-- `Diabetes_Analyzer.cpp`: Console implementation
-- `index.html`: Main web page
-- `script.js`: Screening and combination logic
-- `styles.css`: UI styling
-- `.gitignore`: Ignore generated artifacts and local files
+- `src/cpp/Diabetes_Analyzer.cpp`: Console implementation
+- `web/index.html`: Main web page
+- `web/script.js`: Screening and combination logic
+- `web/styles.css`: UI styling
+- `docs/CHANGELOG.md`: Release history
+- `.github/`: Issue and PR templates
 
 ## Run Locally
 
@@ -43,14 +44,14 @@ python -m http.server 5500
 
 Open:
 
-`http://127.0.0.1:5500/index.html`
+`http://127.0.0.1:5500/web/index.html`
 
 ### C++ Console App
 
 Compile (example with `g++`):
 
 ```powershell
-g++ -std=c++17 -O2 -o Diabetes_Analyzer.exe Diabetes_Analyzer.cpp
+g++ -std=c++17 -O2 -o Diabetes_Analyzer.exe src/cpp/Diabetes_Analyzer.cpp
 ```
 
 Run:

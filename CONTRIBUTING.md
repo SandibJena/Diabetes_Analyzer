@@ -5,8 +5,8 @@ Thanks for your interest in improving Diabetes Analyzer.
 ## Development Setup
 
 1. Clone the repository.
-2. Web app: run `python -m http.server 5500` and open `http://127.0.0.1:5500/index.html`.
-3. C++ app: compile `Diabetes_Analyzer.cpp` with a C++17 compiler.
+2. Web app: run `python -m http.server 5500` and open `http://127.0.0.1:5500/web/index.html`.
+3. C++ app: compile `src/cpp/Diabetes_Analyzer.cpp` with a C++17 compiler.
 
 ## Coding Guidelines
 
