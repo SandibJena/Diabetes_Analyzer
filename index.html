@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diabetes Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="bg-shape bg-shape-a"></div>
+  <div class="bg-shape bg-shape-b"></div>
+  <main class="app-shell">
+    <header class="hero">
+      <p class="kicker">Community Health Tool</p>
+      <h1>Diabetes Analyzer</h1>
+      <p class="subtitle">A quick self-check based on your original C++ decision flow.</p>
+    </header>
+
+    <section class="panel" id="legend-panel">
+      <h2>How To Read The Options</h2>
+      <p class="hint">Each dropdown shows both short code and full meaning (example: <strong>H - High</strong>).</p>
+      <div class="legend-grid">
+        <p><strong>H</strong>: High</p>
+        <p><strong>L</strong>: Low</p>
+        <p><strong>N</strong>: Normal</p>
+        <p><strong>I</strong>: Impaired vision</p>
+        <p><strong>P</strong>: Present / Positive</p>
+        <p><strong>A</strong>: Absent / Negative</p>
+        <p><strong>D</strong>: Diabetic range (OGTT)</p>
+        <p><strong>Y</strong>: Young or Years</p>
+        <p><strong>M</strong>: Middle-aged or Months</p>
+        <p><strong>E</strong>: Elderly</p>
+        <p><strong>B</strong>: Below normal weight</p>
+        <p><strong>W</strong>: Weeks</p>
+      </div>
+      <p class="hint">This tool is for awareness only and is not a medical diagnosis.</p>
+    </section>
+
+    <section class="panel" id="personal-panel">
+      <h2>Personal Information</h2>
+      <div class="grid two-col">
+        <label>Name
+          <input id="name" type="text" placeholder="Your name" required>
+        </label>
+        <label>Age
+          <input id="age" type="number" min="1" max="120" placeholder="e.g. 25" required>
+        </label>
+        <label>Weight
+          <div class="split-input">
+            <input id="weight" type="number" min="1" max="900" step="0.1" required>
+            <select id="weight-unit">
+              <option value="kg">Kilogram (kg)</option>
+              <option value="lbs">Pounds (lbs)</option>
+            </select>
+          </div>
+        </label>
+        <label>Height
+          <div class="split-input">
+            <div class="height-value-stack">
+              <div id="height-cm-wrap">
+                <input id="height" type="number" min="30" max="300" step="0.1" placeholder="Height in cm" required>
+              </div>
+              <div id="height-ftin-wrap" class="hidden">
+                <input id="height-ft" type="number" min="1" max="9" step="1" placeholder="Feet">
+                <input id="height-in" type="number" min="0" max="11" step="1" placeholder="Inches">
+              </div>
+            </div>
+            <select id="height-unit">
+              <option value="cm">Centimeter (cm)</option>
+              <option value="ftin">Feet and Inches</option>
+            </select>
+          </div>
+        </label>
+        <label>Sex
+          <select id="sex">
+            <option value="M">Male</option>
+            <option value="F">Female</option>
+            <option value="T">Trans</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel" id="level1-panel">
+      <h2>Level 1 Symptoms</h2>
+      <p class="hint">Choose one answer for each item.</p>
+      <div class="grid two-col" id="level1-fields"></div>
+      <button class="action" id="check-level1">Check Level 1</button>
+    </section>
+
+    <section class="panel hidden" id="level2-panel">
+      <h2>Level 2 Symptoms</h2>
+      <p class="hint">Shown because level 1 indicates diabetic risk.</p>
+      <div class="grid two-col" id="level2-fields"></div>
+      <button class="action" id="check-level2">Check Level 2</button>
+      <div class="inline-help hidden" id="level2-help" aria-live="polite"></div>
+    </section>
+
+    <section class="panel hidden" id="level3-panel">
+      <h2>Level 3 Symptoms</h2>
+      <p class="hint">Shown because level 2 suggests primary diabetes.</p>
+      <div class="grid two-col" id="level3-fields"></div>
+      <button class="action" id="check-level3">Check Level 3</button>
+    </section>
+
+    <section class="panel" id="combination-panel">
+      <h2>Combination Explorer</h2>
+      <p class="hint">Generate all possible combinations, then customize the result set by fixing specific option values.</p>
+      <div class="grid two-col">
+        <label>Combination scope
+          <select id="combination-mode">
+            <option value="level1">Level 1 only</option>
+            <option value="level2">Level 2 only</option>
+            <option value="level3">Level 3 only</option>
+            <option value="endToEnd">End-to-end flow (Level 1 to Level 3)</option>
+          </select>
+        </label>
+      </div>
+      <p class="hint">Set any filter to <strong>Any</strong> to include all values for that symptom.</p>
+      <div class="grid two-col" id="combination-filters"></div>
+      <button class="action" id="generate-combinations">Generate Combinations</button>
+      <div id="combo-summary" class="combo-summary hidden"></div>
+      <div id="combo-breakdown" class="combo-breakdown hidden"></div>
+      <div id="combo-samples" class="combo-samples hidden"></div>
+    </section>
+
+    <section class="panel result-panel" id="result-panel" aria-live="polite">
+      <h2>Result</h2>
+      <p id="result-text">Fill in your details and click <strong>Check Level 1</strong> to start your self-check.</p>
+      <div id="result-details" class="result-details hidden"></div>
+      <div class="result-note">
+        <strong>Note:</strong> These results are approximate and are based on the data provided by the user. Please consult a specialized doctor for accurate diagnosis and treatment advice.
+      </div>
+      <button class="ghost" id="reset-all">Start Over</button>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
