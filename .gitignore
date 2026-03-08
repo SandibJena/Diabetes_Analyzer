@@ -1,0 +1,12 @@
+# Build outputs
+*.exe
+*.out
+*.obj
+*.o
+
+# Generated project docs
+__Project_DiabetesAnalysis.Cpp.doc
+
+# IDE/system files
+.vscode/
+*.log
