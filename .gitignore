@@ -10,3 +10,5 @@ __Project_DiabetesAnalysis.Cpp.doc
 # IDE/system files
 .vscode/
 *.log
+.vercel
+.env*.local
