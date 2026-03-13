@@ -1,4 +1,5 @@
 #include <cctype>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <string>
@@ -17,6 +18,7 @@ private:
     double weight_{};
     double height_{};
     char sex_{};
+    double bmi_{};
 
     static char readChoice(const string& prompt, const string& allowed) {
         while (true) {
@@ -36,6 +38,19 @@ private:
     static bool askProceed(const string& prompt) {
         char ans = readChoice(prompt + " (Y/N): ", "YN");
         return ans == 'Y';
+    }
+
+    static double computeBMI(double weightKg, double heightCm) {
+        if (heightCm <= 0) return 0.0;
+        double heightM = heightCm / 100.0;
+        return weightKg / (heightM * heightM);
+    }
+
+    static string bmiCategory(double bmi) {
+        if (bmi < 18.5) return "Underweight";
+        if (bmi < 25.0) return "Normal weight";
+        if (bmi < 30.0) return "Overweight";
+        return "Obese";
     }
 
 public:
@@ -58,7 +73,10 @@ public:
         cout << "Height (cm): ";
         cin >> height_;
         sex_ = readChoice("Sex (M/F): ", "MF");
-        cout << "\n";
+
+        bmi_ = computeBMI(weight_, height_);
+        cout << "\nBMI: " << std::fixed << std::setprecision(1) << bmi_
+             << " (" << bmiCategory(bmi_) << ")\n\n";
     }
 
     vector<char> getLevel1Symptoms() const {
@@ -106,6 +124,7 @@ public:
 
     static int analyzeLevel1(const vector<char>& s) {
         if (s.size() != 10) {
+            std::cerr << "Warning: analyzeLevel1 expected 10 symptoms, got " << s.size() << ".\n";
             return 0;
         }
 
@@ -127,6 +146,7 @@ public:
 
     static int analyzeLevel2(const vector<char>& s) {
         if (s.size() != 7) {
+            std::cerr << "Warning: analyzeLevel2 expected 7 symptoms, got " << s.size() << ".\n";
             return 0;
         }
 
@@ -138,14 +158,16 @@ public:
 
     static int analyzeLevel3(const vector<char>& s) {
         if (s.size() != 5) {
+            std::cerr << "Warning: analyzeLevel3 expected 5 symptoms, got " << s.size() << ".\n";
             return -1;
         }
 
+        // Insulin-dependent: ketonuria + auto-antibodies present, weight normal or below,
+        // applicable to any age group (Y/M/E)
         const bool insulinDependent =
-            (s[0] == 'Y' && s[1] == 'N' && s[2] == 'W' && s[3] == 'P' && s[4] == 'P') ||
-            (s[0] == 'Y' && s[1] == 'B' && s[2] == 'W' && s[3] == 'P' && s[4] == 'P') ||
-            (s[0] == 'Y' && s[1] == 'N' && s[2] == 'M' && s[3] == 'P' && s[4] == 'P') ||
-            (s[0] == 'Y' && s[1] == 'N' && s[2] == 'Y' && s[3] == 'P' && s[4] == 'P');
+            (s[3] == 'P' && s[4] == 'P') &&
+            (s[1] == 'N' || s[1] == 'B') &&
+            (s[0] == 'Y' || s[0] == 'M' || s[0] == 'E');
 
         return insulinDependent ? 0 : -1;
     }

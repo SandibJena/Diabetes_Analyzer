@@ -221,11 +221,12 @@ function getLevel2TriggerReasons(symptoms) {
 }
 
 function analyzeLevel3(symptoms) {
+  // Insulin-dependent: young OR middle-aged OR elderly, with ketonuria + antibodies present
+  // Weight can be normal or below normal; duration can be weeks, months, or years
   const insulinDependent = (
-    (symptoms[0] === "Y" && symptoms[1] === "N" && symptoms[2] === "W" && symptoms[3] === "P" && symptoms[4] === "P") ||
-    (symptoms[0] === "Y" && symptoms[1] === "B" && symptoms[2] === "W" && symptoms[3] === "P" && symptoms[4] === "P") ||
-    (symptoms[0] === "Y" && symptoms[1] === "N" && symptoms[2] === "M" && symptoms[3] === "P" && symptoms[4] === "P") ||
-    (symptoms[0] === "Y" && symptoms[1] === "N" && symptoms[2] === "Y" && symptoms[3] === "P" && symptoms[4] === "P")
+    (symptoms[3] === "P" && symptoms[4] === "P") &&
+    (symptoms[1] === "N" || symptoms[1] === "B") &&
+    (symptoms[0] === "Y" || symptoms[0] === "M" || symptoms[0] === "E")
   );
 
   return insulinDependent ? 0 : -1;
@@ -236,6 +237,63 @@ function readAnswers(prefix, questions) {
     const el = document.getElementById(`${prefix}-${q.key}`);
     return el.value;
   });
+}
+
+function computeBMI() {
+  const weightVal = parseFloat(document.getElementById("weight").value);
+  const weightUnit = document.getElementById("weight-unit").value;
+  let weightKg = weightUnit === "lbs" ? weightVal * 0.453592 : weightVal;
+
+  let heightCm;
+  if (document.getElementById("height-unit").value === "cm") {
+    heightCm = parseFloat(document.getElementById("height").value);
+  } else {
+    const ft = parseFloat(document.getElementById("height-ft").value) || 0;
+    const inches = parseFloat(document.getElementById("height-in").value) || 0;
+    heightCm = (ft * 12 + inches) * 2.54;
+  }
+
+  if (!weightKg || !heightCm) return null;
+  const bmi = weightKg / Math.pow(heightCm / 100, 2);
+  return Math.round(bmi * 10) / 10;
+}
+
+function bmiCategory(bmi) {
+  if (bmi < 18.5) return "Underweight";
+  if (bmi < 25) return "Normal weight";
+  if (bmi < 30) return "Overweight";
+  return "Obese";
+}
+
+function deriveAgeGroup() {
+  const age = parseFloat(document.getElementById("age").value);
+  if (!age || age <= 0) return null;
+  if (age < 35) return "Y";
+  if (age <= 60) return "M";
+  return "E";
+}
+
+function validatePersonalInfo() {
+  const age = parseFloat(document.getElementById("age").value);
+  const weight = parseFloat(document.getElementById("weight").value);
+
+  if (!age || age < 1 || age > 120) {
+    return "Age must be between 1 and 120.";
+  }
+  if (!weight || weight < 1 || weight > 900) {
+    return "Weight must be a positive number.";
+  }
+
+  if (document.getElementById("height-unit").value === "cm") {
+    const h = parseFloat(document.getElementById("height").value);
+    if (!h || h < 30 || h > 300) return "Height (cm) must be between 30 and 300.";
+  } else {
+    const ft = parseFloat(document.getElementById("height-ft").value);
+    const inches = parseFloat(document.getElementById("height-in").value);
+    if (!ft || ft < 1 || ft > 9) return "Feet must be between 1 and 9.";
+    if (isNaN(inches) || inches < 0 || inches > 11) return "Inches must be between 0 and 11.";
+  }
+  return null;
 }
 
 function questionDefinitionsForMode(mode) {
@@ -318,13 +376,20 @@ function formatScenarioSummary(mode, scenario) {
 }
 
 function computeCombinationsForMode(mode, filters) {
+  const CAP = 50000;
   const stats = {
     total: 0,
     breakdown: {},
-    samples: []
+    samples: [],
+    truncated: false,
+    cap: CAP
   };
 
   function collect(outcome, scenario) {
+    if (stats.total >= CAP) {
+      stats.truncated = true;
+      return;
+    }
     if (!scenarioMatchesFilters(scenario, filters)) {
       return;
     }
@@ -451,22 +516,76 @@ function resetCombinationOutput() {
 }
 
 function renderCombinationOutput(mode, stats) {
+  // Summary
   comboSummary.textContent = `Matching combinations: ${stats.total}`;
   comboSummary.classList.remove("hidden");
 
-  const rows = Object.entries(stats.breakdown)
-    .sort((a, b) => b[1] - a[1])
-    .map(([label, count]) => `<tr><td>${label}</td><td>${count}</td></tr>`)
-    .join("");
+  // Breakdown table — built with DOM to avoid XSS
+  comboBreakdown.innerHTML = "";
+  const breakdownTitle = document.createElement("strong");
+  breakdownTitle.textContent = `Outcome breakdown (${mode})`;
+  comboBreakdown.append(breakdownTitle);
 
-  comboBreakdown.innerHTML = `<strong>Outcome breakdown (${mode})</strong><table><thead><tr><th>Outcome</th><th>Count</th></tr></thead><tbody>${rows || "<tr><td colspan='2'>No combinations found</td></tr>"}</tbody></table>`;
+  const bTable = document.createElement("table");
+  const bHead = bTable.createTHead();
+  const bHRow = bHead.insertRow();
+  ["Outcome", "Count"].forEach((h) => {
+    const th = document.createElement("th");
+    th.textContent = h;
+    bHRow.append(th);
+  });
+  const bBody = bTable.createTBody();
+  const entries = Object.entries(stats.breakdown).sort((a, b) => b[1] - a[1]);
+  if (entries.length === 0) {
+    const row = bBody.insertRow();
+    const cell = row.insertCell();
+    cell.colSpan = 2;
+    cell.textContent = "No combinations found";
+  } else {
+    entries.forEach(([label, count]) => {
+      const row = bBody.insertRow();
+      const c1 = row.insertCell(); c1.textContent = label;
+      const c2 = row.insertCell(); c2.textContent = count;
+    });
+  }
+  comboBreakdown.append(bTable);
   comboBreakdown.classList.remove("hidden");
 
-  const sampleRows = stats.samples
-    .map((sample, index) => `<tr><td>${index + 1}</td><td>${sample.outcome}</td><td>${sample.summary}</td></tr>`)
-    .join("");
+  // Sample table
+  comboSamples.innerHTML = "";
+  const samplesTitle = document.createElement("strong");
+  samplesTitle.textContent = `Sample combinations (first ${stats.samples.length})`;
+  if (stats.truncated) {
+    const note = document.createElement("span");
+    note.style.color = "#b45309";
+    note.textContent = ` — results capped at ${stats.cap.toLocaleString()} matches to avoid browser freeze`;
+    samplesTitle.append(note);
+  }
+  comboSamples.append(samplesTitle);
 
-  comboSamples.innerHTML = `<strong>Sample combinations (first ${stats.samples.length})</strong><table><thead><tr><th>#</th><th>Outcome</th><th>Combination</th></tr></thead><tbody>${sampleRows || "<tr><td colspan='3'>No samples to show</td></tr>"}</tbody></table>`;
+  const sTable = document.createElement("table");
+  const sHead = sTable.createTHead();
+  const sHRow = sHead.insertRow();
+  ["#", "Outcome", "Combination"].forEach((h) => {
+    const th = document.createElement("th");
+    th.textContent = h;
+    sHRow.append(th);
+  });
+  const sBody = sTable.createTBody();
+  if (stats.samples.length === 0) {
+    const row = sBody.insertRow();
+    const cell = row.insertCell();
+    cell.colSpan = 3;
+    cell.textContent = "No samples to show";
+  } else {
+    stats.samples.forEach((sample, index) => {
+      const row = sBody.insertRow();
+      const c1 = row.insertCell(); c1.textContent = index + 1;
+      const c2 = row.insertCell(); c2.textContent = sample.outcome;
+      const c3 = row.insertCell(); c3.textContent = sample.summary;
+    });
+  }
+  comboSamples.append(sTable);
   comboSamples.classList.remove("hidden");
 }
 
@@ -540,12 +659,30 @@ function syncHeightUnitUI() {
 document.getElementById("check-level1").addEventListener("click", () => {
   if (!personalInfoFilled()) {
     updateResult("Please complete your personal details first, then click Check Level 1.", true);
+    document.getElementById("result-panel").scrollIntoView({ behavior: "smooth", block: "start" });
     return;
+  }
+
+  const validationError = validatePersonalInfo();
+  if (validationError) {
+    updateResult(validationError, true);
+    document.getElementById("result-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+
+  // Auto-derive age group for Level 3
+  const derivedGroup = deriveAgeGroup();
+  if (derivedGroup) {
+    const ageSel = document.getElementById("l3-ageGroup");
+    if (ageSel) ageSel.value = derivedGroup;
   }
 
   const level1 = readAnswers("l1", level1Questions);
   const result = analyzeLevel1(level1);
   const name = profileName();
+
+  const bmi = computeBMI();
+  const bmiLine = bmi ? `Your BMI is ${bmi} (${bmiCategory(bmi)}).` : null;
 
   level2Panel.classList.add("hidden");
   level3Panel.classList.add("hidden");
@@ -555,19 +692,22 @@ document.getElementById("check-level1").addEventListener("click", () => {
   if (result === 0) {
     updateResult(`${name}, your answers in Step 1 look low-risk for diabetes right now. If you still have symptoms, please speak with a doctor.`, false);
     updateResultDetails([
+      bmiLine,
       "Current answers do not strongly match diabetes risk in this screening.",
       "This is not a final diagnosis. If symptoms continue, get blood sugar tests done."
-    ]);
-    return;
+    ].filter(Boolean));
+  } else {
+    updateResult(`${name}, Step 1 shows possible diabetes risk. Please continue to Step 2 for a clearer result.`, true);
+    updateResultDetails([
+      bmiLine,
+      "Your Step 1 pattern suggests possible diabetes-related changes.",
+      "Step 2 helps decide whether the pattern looks primary or secondary."
+    ].filter(Boolean));
+    level2Panel.classList.remove("hidden");
+    updateLevel2Help("To move to Level 3, select A (Absent) for all P/A items and keep HCTS as L or N (not High).");
   }
 
-  updateResult(`${name}, Step 1 shows possible diabetes risk. Please continue to Step 2 for a clearer result.`, true);
-  updateResultDetails([
-    "Your Step 1 pattern suggests possible diabetes-related changes.",
-    "Step 2 helps decide whether the pattern looks primary or secondary."
-  ]);
-  level2Panel.classList.remove("hidden");
-  updateLevel2Help("To move to Level 3, select A (Absent) for all P/A items and keep HCTS as L or N (not High).");
+  document.getElementById("result-panel").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 document.getElementById("check-level2").addEventListener("click", () => {
@@ -598,6 +738,7 @@ document.getElementById("check-level2").addEventListener("click", () => {
       ]);
       updateLevel2Help("Blocked from Level 3 because Level 2 matched SECONDARY pattern.");
     }
+    document.getElementById("result-panel").scrollIntoView({ behavior: "smooth", block: "start" });
     return;
   }
 
@@ -608,6 +749,7 @@ document.getElementById("check-level2").addEventListener("click", () => {
   ]);
   updateLevel2Help("Great. Level 2 is PRIMARY, so Level 3 is now available.");
   level3Panel.classList.remove("hidden");
+  document.getElementById("result-panel").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 document.getElementById("check-level3").addEventListener("click", () => {
@@ -622,15 +764,16 @@ document.getElementById("check-level3").addEventListener("click", () => {
       "Typical outcome: insulin treatment is often needed, based on doctor evaluation.",
       "Do not self-medicate. Get medical confirmation and a treatment plan."
     ]);
-    return;
+  } else {
+    updateResult(`${name}, Step 3 suggests a non-insulin-dependent diabetes pattern. Please consult a doctor to confirm and discuss next steps.`, true);
+    updateResultDetails([
+      "Likely type from this path: Non-insulin-dependent pattern.",
+      "Typical outcome: doctor may start lifestyle management and/or oral medicines.",
+      "Medical confirmation is still required before any treatment decision."
+    ]);
   }
 
-  updateResult(`${name}, Step 3 suggests a non-insulin-dependent diabetes pattern. Please consult a doctor to confirm and discuss next steps.`, true);
-  updateResultDetails([
-    "Likely type from this path: Non-insulin-dependent pattern.",
-    "Typical outcome: doctor may start lifestyle management and/or oral medicines.",
-    "Medical confirmation is still required before any treatment decision."
-  ]);
+  document.getElementById("result-panel").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 document.getElementById("reset-all").addEventListener("click", () => {
@@ -646,6 +789,7 @@ document.getElementById("reset-all").addEventListener("click", () => {
   level3Panel.classList.add("hidden");
   updateLevel2Help("");
   updateResultDetails([]);
+  resultText.className = "";
   updateResult("Fill in your details and click Check Level 1 to start your self-check.", false);
   resetCombinationOutput();
   syncHeightUnitUI();

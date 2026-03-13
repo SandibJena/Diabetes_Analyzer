@@ -1,36 +1,83 @@
 # Diabetes Analyzer
 
-A hybrid C++ and web-based diabetes screening project that follows a structured 3-level decision flow for symptom-based risk assessment.
+A hybrid C++ and web-based diabetes risk screening tool that analyzes symptom patterns through a structured 3-level decision system.
 
-## Overview
+🔗 Live Demo: https://glucowatch.vercel.app/web/index.html  
+📦 GitHub Repository: https://github.com/SandibJena/Diabetes_Analyzer.git
 
-Diabetes Analyzer provides two ways to run the same core logic:
-- A C++ console application (`src/cpp/Diabetes_Analyzer.cpp`)
-- A browser application (`web/index.html`, `web/script.js`, `web/styles.css`)
-
-The project is intended for awareness and educational use. It is not a medical diagnostic system.
-
-## Features
-
-- 3-stage screening workflow:
-  - Level 1: Initial risk pattern check
-  - Level 2: Primary vs secondary pattern check
-  - Level 3: Insulin-dependent vs non-insulin-dependent orientation
-- Unit-flexible personal input support in web UI:
-  - Height: cm or feet/inches
-  - Weight: kg or lbs
-  - Sex options: male, female, trans
-- Combination Explorer to enumerate and filter symptom combinations
-- Clear result explanations and medical disclaimer in UI
 
 ## Project Structure
 
-- `src/cpp/Diabetes_Analyzer.cpp`: Console implementation
-- `web/index.html`: Main web page
-- `web/script.js`: Screening and combination logic
-- `web/styles.css`: UI styling
-- `docs/CHANGELOG.md`: Release history
-- `.github/`: Issue and PR templates
+project-root
+│
+├── src
+│ └── cpp
+│ └── Diabetes_Analyzer.cpp
+│
+├── web
+│ ├── index.html
+│ ├── script.js
+│ └── styles.css
+│
+├── docs
+│ ├── image
+│ │ ├── home.png
+│ │ ├── input.png
+│ │ └── result.png
+│ └── CHANGELOG.md
+│
+└── .github
+
+
+## Screenshots
+
+### Home Interface
+![Home Screen](docs/image/home.png)
+
+### Input Interface
+![Input Screen](docs/image/input.png)
+
+### Risk Analysis Result
+![Result Screen](docs/image/result.png)
+
+
+## Tech Stack
+
+Frontend:
+- HTML5
+- CSS3
+- JavaScript
+
+Backend / Logic:
+- C++ (core screening algorithm)
+
+Deployment:
+- Vercel
+
+Version Control:
+- Git & GitHub
+
+
+## Screening Algorithm
+
+The analyzer uses a 3-level decision flow:
+
+1️⃣ Level 1 – Risk Detection  
+Identifies general symptom combinations associated with diabetes risk.
+
+2️⃣ Level 2 – Pattern Classification  
+Distinguishes between primary and secondary symptom patterns.
+
+3️⃣ Level 3 – Diabetes Orientation  
+Provides an indication of insulin-dependent or non-insulin-dependent patterns.
+
+
+## Prerequisites
+
+- Python 3.x (for running local web server)
+- g++ compiler supporting C++17
+- Modern web browser
+
 
 ## Run Locally
 
@@ -60,10 +107,34 @@ Run:
 .\Diabetes_Analyzer.exe
 ```
 
+
+## Future Improvements
+
+- Add machine learning model for prediction
+- Store historical screening results
+- User authentication system
+- Mobile responsive UI
+
+
+## Contributing
+
+Contributions are welcome.
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit changes
+4. Submit a Pull Request
+
+[![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-black)](https://glucowatch.vercel.app/web/index.html)
+
+
 ## Important Disclaimer
 
 Results are approximate and depend on user-provided inputs. Always consult a qualified medical professional for accurate diagnosis and treatment decisions.
 
+
 ## License
 
 This project is licensed under the MIT License. See `LICENSE`.
+
+
